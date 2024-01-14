@@ -36,3 +36,4 @@ webroot/assets/lib/bower_components
 /*.key
 docker/db/*
 .idea/
+/venv/
