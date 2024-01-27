@@ -105,3 +105,95 @@ def embed_watermark(image, watermark):
         embed_img = cv2.merge([embed_img.astype(np.uint8), alpha])
 
     return embed_img
+
+
+def extract_watermark(image, watermark_shape):
+    """
+    Extract a watermark from an image.
+
+    :param image: The image to extract the watermark from.
+    :param watermark_shape: The shape of the watermark.
+    :return: The extracted watermark.
+    """
+    # Initialization
+    password_wm = 1
+
+    block_shape = np.array([4, 4])
+    password_img = 1
+    d1, d2 = 36, 20
+
+    ca, hvd, = [np.array([])] * 3, [np.array([])] * 3
+    ca_block = [np.array([])] * 3
+    ca_part = [np.array([])] * 3
+
+    embed_img = image
+    wm_shape = watermark_shape
+
+    # Extract watermark
+    wm_size = np.array(wm_shape).prod()
+
+    img = embed_img
+
+    alpha = None
+    if image.shape[2] == 4:
+        if image[:, :, 3].min() < 255:
+            alpha = image[:, :, 3]
+            image = image[:, :, :3]
+
+    image = image.astype(np.float32)
+    img_shape = image.shape[:2]
+
+    img_yuv = cv2.copyMakeBorder(cv2.cvtColor(image, cv2.COLOR_BGR2YUV),
+                                 0, image.shape[0] % 2, 0, image.shape[1] % 2,
+                                 cv2.BORDER_CONSTANT, value=(0, 0, 0))
+
+    ca_shape = [(i + 1) // 2 for i in img_shape]
+
+    ca_block_shape = (ca_shape[0] // block_shape[0], ca_shape[1] // block_shape[1],
+                      block_shape[0], block_shape[1])
+    strides = 4 * np.array([ca_shape[1] * block_shape[0], block_shape[1], ca_shape[1], 1])
+
+    for channel in range(3):
+        ca[channel], hvd[channel] = pywt.dwt2(img_yuv[:, :, channel], 'haar')
+        ca_block[channel] = np.lib.stride_tricks.as_strided(ca[channel].astype(np.float32),
+                                                            ca_block_shape, strides)
+
+    block_num = ca_block_shape[0] * ca_block_shape[1]
+    assert wm_size < block_num, IndexError(
+        'Available {}kb，Watermark{}kb'.format(block_num / 1000, wm_size / 1000))
+    part_shape = ca_block_shape[:2] * block_shape
+    block_index = [(i, j) for i in range(ca_block_shape[0]) for j in range(ca_block_shape[1])]
+
+    wm_block_bit = np.zeros(shape=(3, block_num))
+
+    idx_shuffle = np.random.RandomState(password_img) \
+        .random(size=(block_num, block_shape[0] * block_shape[1])) \
+        .argsort(axis=1)
+
+    for channel in range(3):
+        results = []
+        for i in range(block_num):
+            block, shuffler = (ca_block[channel][block_index[i]], idx_shuffle[i])
+            block_dct_shuffled = cv2.dct(block).flatten()[shuffler].reshape(block_shape)
+
+            u, s, v = np.linalg.svd(block_dct_shuffled)
+            wm = (s[0] % d1 > d1 / 2) * 1
+            if d2:
+                tmp = (s[1] % d2 > d2 / 2) * 1
+                wm = (wm * 3 + tmp * 1) / 4
+            result = wm
+            results.append(result)
+        wm_block_bit[channel, :] = results
+
+    wm_avg = np.zeros(shape=wm_size)
+    for i in range(wm_size):
+        wm_avg[i] = wm_block_bit[:, i::wm_size].mean()
+
+    wm_index = np.arange(wm_size)
+    np.random.RandomState(password_wm).shuffle(wm_index)
+    wm_avg[wm_index] = wm_avg.copy()
+    wm = wm_avg
+
+    wm = 255 * wm.reshape(wm_shape[0], wm_shape[1])
+
+    return wm
