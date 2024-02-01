@@ -1,3 +1,5 @@
+# Based on https://github.com/guofei9987/blind_watermark
+
 import copy
 
 import numpy as np
@@ -60,8 +62,10 @@ def embed_watermark(image, watermark):
     ca_shape = [(i + 1) // 2 for i in image.shape[:2]]
     ca_block_shape = (ca_shape[0] // block_shape[0], ca_shape[1] // block_shape[1], block_shape[0], block_shape[1])
 
-    # Calculate strides that are needed to transform the ca array into the block-wise ca array
-    strides = 4 * np.array([ca_shape[1] * block_shape[0], block_shape[1], ca_shape[1], 1])
+    # Calculate the shape and slice that are needed to transform the ca array into the block-wise ca array
+    ca_block_reshape = (ca_block_shape[0], ca_block_shape[2], ca_block_shape[1], ca_block_shape[3])
+    ca_block_slice = (slice(None, (ca_block_shape[0] * block_shape[0])),
+                      slice(None, (ca_block_shape[1] * block_shape[1])))
 
     # Horizontal, vertical, and diagonal coefficients array (channel-wise)
     # These coefficients represent the high-frequency components of the image and will not be altered
@@ -73,8 +77,8 @@ def embed_watermark(image, watermark):
     for channel in range(3):
         ca[channel], hvd[channel] = pywt.dwt2(image_yuv[:, :, channel], 'haar')
         # Transform the ca array into the block-wise ca array
-        # TODO: Think of a safer way to do this (see notes to np.lib.stride_tricks.as_strided)
-        ca_block[channel] = np.lib.stride_tricks.as_strided(ca[channel].astype(np.float32), ca_block_shape, strides)
+        ca_block[channel] = (ca[channel].astype(np.float32)[ca_block_slice]
+                             .reshape(ca_block_reshape).transpose(0, 2, 1, 3))
 
     """
     Set up the watermark and assert it can be embedded into the image. 
@@ -218,8 +222,10 @@ def extract_watermark(image, watermark_shape):
     ca_shape = [(i + 1) // 2 for i in image.shape[:2]]
     ca_block_shape = (ca_shape[0] // block_shape[0], ca_shape[1] // block_shape[1], block_shape[0], block_shape[1])
 
-    # Calculate strides that are needed to transform the ca array into the block-wise ca array
-    strides = 4 * np.array([ca_shape[1] * block_shape[0], block_shape[1], ca_shape[1], 1])
+    # Calculate the shape and slice that are needed to transform the ca array into the block-wise ca array
+    ca_block_reshape = (ca_block_shape[0], ca_block_shape[2], ca_block_shape[1], ca_block_shape[3])
+    ca_block_slice = (slice(None, (ca_block_shape[0] * block_shape[0])),
+                      slice(None, (ca_block_shape[1] * block_shape[1])))
 
     # Horizontal, vertical, and diagonal coefficients array (channel-wise)
     # These coefficients represent the high-frequency components of the image
@@ -231,8 +237,8 @@ def extract_watermark(image, watermark_shape):
     for channel in range(3):
         ca[channel], hvd[channel] = pywt.dwt2(image_yuv[:, :, channel], 'haar')
         # Transform the ca array into the block-wise ca array
-        # TODO: Think of a safer way to do this (see notes to np.lib.stride_tricks.as_strided)
-        ca_block[channel] = np.lib.stride_tricks.as_strided(ca[channel].astype(np.float32), ca_block_shape, strides)
+        ca_block[channel] = (ca[channel].astype(np.float32)[ca_block_slice]
+                             .reshape(ca_block_reshape).transpose(0, 2, 1, 3))
 
     """
     Initialize data structures for the watermark and assert it can be extracted from the image. 

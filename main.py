@@ -1,16 +1,19 @@
-from blind_watermark import WaterMark
+import cv2
+
+from watermark import embed_watermark, extract_watermark
 
 
 def main():
     # Embed watermark
-    wm = WaterMark()
-    wm.read_img("images/input.jpg")
-    wm.read_wm("images/watermark.jpg")
-    wm.embed("images/output.png")
+    image = cv2.imread("images/input.jpg", flags=cv2.IMREAD_UNCHANGED)
+    watermark = cv2.imread("images/watermark.jpg", flags=cv2.IMREAD_GRAYSCALE)
+    embedded_image = embed_watermark(image, watermark)
+    cv2.imwrite("images/output.png", img=embedded_image)
 
     # Extract watermark
-    wm = WaterMark()
-    wm.extract(filename="images/output.png", wm_shape=(50, 50), out_wm_name="images/extracted-watermark.png", )
+    embedded_image = cv2.imread("images/output.png", flags=cv2.IMREAD_COLOR)
+    watermark = extract_watermark(embedded_image, (50, 50))
+    cv2.imwrite("images/extracted-watermark.png", img=watermark)
 
 
 if __name__ == "__main__":
