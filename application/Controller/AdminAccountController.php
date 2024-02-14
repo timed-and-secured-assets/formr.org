@@ -21,33 +21,45 @@ class AdminAccountController extends Controller {
             $redirect = false;
             $oldEmail = $this->user->email;
 
-            // Change basic info + email
-            $change = $this->user->changeData($this->request->str('password'), $this->request->getParams());
-            if (!$change) {
-                alert(nl2br(implode("\n", $this->user->errors)), 'alert-danger');
-                $vars['showform'] = 'show-form';
-            } elseif ($oldEmail != $this->request->str('new_email')) {
-                $redirect = 'logout';
-            }
-
-            // Change password
-            $passwords = array(
-                'email' => $this->user->email,
-                'password' => $this->request->str('password'),
-                'new_password' => $this->request->str('new_password'),
-            );
-            if ($passwords['new_password']) {
-                if ($this->request->str('new_password') !== $this->request->str('new_password_c')) {
-                    alert('The new passwords do not match', 'alert-danger');
+            
+            // change moderators
+            if($this->request->getParam('user_delete_id') != null) {
+                // remove moderator from admin
+                alert('Moderator removed' . $this->request->getParam('user_delete_id'), 'alert-success');
+            } else
+            if ($this->request->getParam('add_moderator_name') != null) {
+                // add moderator to admin
+                alert('Moderator added' . $this->request->getParam('add_moderator_name'), 'alert-success');
+            } else {
+                // Change basic info + email
+                $change = $this->user->changeData($this->request->str('password'), $this->request->getParams());
+                if (!$change) {
+                    alert(nl2br(implode("\n", $this->user->errors)), 'alert-danger');
                     $vars['showform'] = 'show-form';
-                } elseif ($this->user->changePassword($passwords)) {
-                    alert('<strong>Success!</strong> Your password was changed! Please sign-in with your new password.', 'alert-success');
+                } elseif ($oldEmail != $this->request->str('new_email')) {
                     $redirect = 'logout';
-                } else {
-                    alert(implode($this->user->errors), 'alert-danger');
-                    $vars['showform'] = 'show-form';
+                }
+
+                // Change password
+                $passwords = array(
+                    'email' => $this->user->email,
+                    'password' => $this->request->str('password'),
+                    'new_password' => $this->request->str('new_password'),
+                );
+                if ($passwords['new_password']) {
+                    if ($this->request->str('new_password') !== $this->request->str('new_password_c')) {
+                        alert('The new passwords do not match', 'alert-danger');
+                        $vars['showform'] = 'show-form';
+                    } elseif ($this->user->changePassword($passwords)) {
+                        alert('<strong>Success!</strong> Your password was changed! Please sign-in with your new password.', 'alert-success');
+                        $redirect = 'logout';
+                    } else {
+                        alert(implode($this->user->errors), 'alert-danger');
+                        $vars['showform'] = 'show-form';
+                    }
                 }
             }
+
 
             if ($redirect) {
                 $this->request->redirect($redirect);
