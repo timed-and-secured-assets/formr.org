@@ -122,6 +122,7 @@ CREATE TABLE `survey_users` (
   `created` datetime DEFAULT NULL,
   `modified` datetime DEFAULT NULL,
   `admin` tinyint(1) DEFAULT '0',
+  `moderator_for` int(10) unsigned DEFAULT '0',
   `email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `password` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `email_verification_hash` varchar(255) CHARACTER SET latin1 COLLATE latin1_bin DEFAULT NULL,

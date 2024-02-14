@@ -1,0 +1,1 @@
+ALTER TABLE `survey_users` ADD COLUMN `moderator_for` int(10) unsigned DEFAULT 0;

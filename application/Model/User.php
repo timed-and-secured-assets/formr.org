@@ -15,6 +15,7 @@ class User extends Model {
     public $logged_in = false;
     public $admin = false;
     public $referrer_code = null;
+    public $moderator_for = 0;
     // todo: time zone, etc.
     
     protected $table = "survey_users";
@@ -38,7 +39,7 @@ class User extends Model {
     }
 
     private function load() {
-        $user = $this->db->select('id, email, password, admin, user_code, referrer_code, first_name, last_name, affiliation, created, email_verified')
+        $user = $this->db->select('id, email, password, admin, user_code, referrer_code, first_name, last_name, affiliation, created, email_verified, moderator_for')
                 ->from('survey_users')
                 ->where(array('id' => $this->id))
                 ->limit(1)
@@ -62,6 +63,10 @@ class User extends Model {
         return $this->cron;
     }
 
+    public function isModerator() {
+        return $this->moderator_for != 0;
+    }
+
     public function isAdmin() {
         return $this->admin >= 1;
     }
@@ -76,6 +81,59 @@ class User extends Model {
 
     public function getEmail() {
         return $this->email;
+    }
+
+    public function setModeratorFor($user_id) {
+        $this->moderator_for = $user_id;
+        if (!Site::getCurrentUser()->isAdmin()) {
+            throw new Exception("You need more admin rights to effect this change");
+        }
+
+        $user_id = (int) $user_id;
+        $user_id = max(array(0, $user_id));
+
+        return $this->db->update('survey_users', array('moderator_for' => $user_id), array('id' => $this->id));
+    }
+
+    public function resetModeratorFor() {
+        $this->moderator_for = 0;
+
+        if (!Site::getCurrentUser()->isAdmin()) {
+            throw new Exception("You need more admin rights to effect this change");
+        }
+
+        $this->moderator_for = (int) $this->moderator_for;
+        $this->moderator_for = max(array(0, $this->moderator_for));
+
+        return $this->db->update('survey_users', array('moderator_for' => $this->moderator_for), array('id' => $this->id));
+    }
+
+    public function getRunsForModerator($order = 'id DESC', $limit = null) {
+        if ($this->isModerator()) {
+            $select = $this->db->select();
+            $select->from('survey_runs');
+            $select->order($order, null);
+            if ($limit) {
+                $select->limit($limit);
+            }
+            $select->where(array('user_id' => $this->moderator_for));
+            return $select->fetchAll();
+        }
+        return array();
+    }
+
+    public function getStudiesForModerator($order = 'id DESC', $limit = null, $cols = []) {
+        if ($this->isModerator()) {
+            $select = $this->db->select($cols);
+            $select->from('survey_studies');
+            $select->order($order, null);
+            if ($limit) {
+                $select->limit($limit);
+            }
+            $select->where(array('user_id' => $this->moderator_for));
+            return $select->fetchAll();
+        }
+        return array();
     }
 
     public function created($object) {
