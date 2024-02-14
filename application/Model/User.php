@@ -83,6 +83,16 @@ class User extends Model {
         return $this->email;
     }
 
+    public function loadModerators() {
+        if($this->isAdmin()) {
+            $select = $this->db->select();
+            $select->from('survey_users');
+            $select->where(array('user_id' => $this->id));
+            return $select->fetchAll();
+        }
+        return array();
+    }
+
     public function setModeratorFor($user_id) {
         $this->moderator_for = $user_id;
         if (!Site::getCurrentUser()->isAdmin()) {
