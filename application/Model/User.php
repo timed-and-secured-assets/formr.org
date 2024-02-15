@@ -83,7 +83,7 @@ class User extends Model {
         return $this->email;
     }
 
-    public function loadModerators() {
+    public function loadModerators() { // ToDo: fix, nicht richtig
         if($this->isAdmin()) {
             $select = $this->db->select();
             $select->from('survey_users');
@@ -93,7 +93,7 @@ class User extends Model {
         return array();
     }
 
-    public function setModeratorFor($user_id) {
+    public function setModeratorFor($user_id) { // TODO: Fix input ist evtl nicht user id sondern email, abklaeren mit Elias
         $this->moderator_for = $user_id;
         if (!Site::getCurrentUser()->isAdmin()) {
             throw new Exception("You need more admin rights to effect this change");
@@ -104,7 +104,7 @@ class User extends Model {
 
         return $this->db->update('survey_users', array('moderator_for' => $user_id), array('id' => $this->id));
     }
-
+    //TODO: Nachfragen ob Elias das Objekt des Users hat, dann kann er darauf diese Funktion ausführen
     public function resetModeratorFor() {
         $this->moderator_for = 0;
 
