@@ -120,7 +120,7 @@ class User extends Model {
     }
 
     //is called by an admin for a user and sets the param user_id as the moderator_for to the user which is specified by his email
-    public function setModeratorForForUserEmail($user_id, $mail) {
+    public function setModeratorForWithUserEmail($user_id, $mail) {
             if (!Site::getCurrentUser()->isAdmin()) {
                 throw new Exception("You need more admin rights to effect this change");
             }
@@ -147,6 +147,15 @@ class User extends Model {
 
         return $this->db->update('survey_users', array('moderator_for' => $this->moderator_for), array('id' => $this->id));
     }
+
+    //called by an admin and resets the moderator_for value to 0 of the user who is specified by his email
+    public function resetModeratorForWithEmail($mail) {
+            if (!Site::getCurrentUser()->isAdmin()) {
+                throw new Exception("You need more admin rights to effect this change");
+            }
+
+            return $this->db->update('survey_users', array('moderator_for' => 0), array('email' => $mail));
+        }
 
     public function getRunsForModerator($order = 'id DESC', $limit = null) {
         if ($this->isModerator()) {
