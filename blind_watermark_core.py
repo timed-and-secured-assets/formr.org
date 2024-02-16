@@ -1,5 +1,6 @@
 # Based on https://github.com/guofei9987/blind_watermark
 
+import os
 import copy
 
 import numpy as np
@@ -21,8 +22,8 @@ def embed_watermark(image, watermark):
     Note that these parameters must be identical when extracting the watermark.
     """
     # Parameters for the embedding strength (larger parameters are more stable but the output is more distorted)
-    d1 = 36
-    d2 = 20
+    d1 = int(os.environ.get("BLIND_WATERMARK_D1", 36))
+    d2 = int(os.environ.get("BLIND_WATERMARK_D2", 20))
 
     # Shape of the blocks used in the embedding (dimensions must be equal and even)
     block_shape = np.array([4, 4])
@@ -184,8 +185,8 @@ def extract_watermark(image, watermark_shape):
     Note that these parameters must be identical to the parameters used in the embedding of the watermark.
     """
     # Parameters for the embedding strength (larger parameters are more stable but the output is more distorted)
-    d1 = 36
-    d2 = 20
+    d1 = int(os.environ.get("BLIND_WATERMARK_D1", "36"))
+    d2 = int(os.environ.get("BLIND_WATERMARK_D2", "20"))
 
     # Shape of the blocks used in the embedding (dimensions must be equal and even)
     block_shape = np.array([4, 4])
