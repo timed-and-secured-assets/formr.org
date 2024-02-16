@@ -83,37 +83,64 @@ class User extends Model {
         return $this->email;
     }
 
-    public function loadModerators() { // ToDo: fix, nicht richtig
+    //is called by an admin and returns an array of all moderators assigned to this admin
+    public function loadModerators() { // ToDo: Need to test
         if($this->isAdmin()) {
             $select = $this->db->select();
             $select->from('survey_users');
-            $select->where(array('user_id' => $this->id));
+            $select->where(array('moderator_for' => $this->id));
             return $select->fetchAll();
         }
         return array();
     }
 
-    public function setModeratorFor($user_id) { // TODO: Fix input ist evtl nicht user id sondern email, abklaeren mit Elias
-        $this->moderator_for = $user_id;
+    public function loadIdOfModeratorByMail($mail) { // ToDo: Need to test
+            if($this->isAdmin()) {
+                $select = $this->db->select('id');
+                $select->from('survey_users');
+                $select->where(array('email' => $mail));
+                return $select->fetchAll();
+            }
+            return array();
+        }
+
+    //is called by an admin for a user and sets the param user_id as the moderator_for to the user
+    public function setModeratorFor($user_id) {
         if (!Site::getCurrentUser()->isAdmin()) {
             throw new Exception("You need more admin rights to effect this change");
         }
 
         $user_id = (int) $user_id;
         $user_id = max(array(0, $user_id));
+        $this->moderator_for = $user_id;
 
         return $this->db->update('survey_users', array('moderator_for' => $user_id), array('id' => $this->id));
     }
-    //TODO: Nachfragen ob Elias das Objekt des Users hat, dann kann er darauf diese Funktion ausführen
-    public function resetModeratorFor() {
-        $this->moderator_for = 0;
+    //is called by an admin for a user and sets the param user_id as the moderator_for to the user which is specified by his email
+    public function setModeratorForForUserEmail($user_id, $mail) {
+            if (!Site::getCurrentUser()->isAdmin()) {
+                throw new Exception("You need more admin rights to effect this change");
+            }
 
+            $user_id = (int) $user_id;
+            $user_id = max(array(0, $user_id));
+
+            $idCalledUser = loadIdOfModeratorByMail($mail);
+            $calledUser = new User($idCalledUser,null);
+            $calledUser->moderator_for = $user_id;
+            return $this->db->update('survey_users', array('moderator_for' => $user_id), array('email' => $mail));
+        }
+
+    //TODO: Nachfragen ob Elias das Objekt des Users hat, dann kann er darauf diese Funktion ausführen
+    //called by an admin and resets the moderator_for value to 0 of the user
+    public function resetModeratorFor() {
         if (!Site::getCurrentUser()->isAdmin()) {
             throw new Exception("You need more admin rights to effect this change");
         }
 
         $this->moderator_for = (int) $this->moderator_for;
         $this->moderator_for = max(array(0, $this->moderator_for));
+        $this->moderator_for = 0;
 
         return $this->db->update('survey_users', array('moderator_for' => $this->moderator_for), array('id' => $this->id));
     }
