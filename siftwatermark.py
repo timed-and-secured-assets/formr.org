@@ -1,7 +1,6 @@
 import cv2 as cv
 import numpy as np
-
-# !! not finished yet !!
+import pywt
 
 # based on:
 # https://link.springer.com/article/10.1007/s11042-022-12738-x
@@ -81,6 +80,22 @@ def embedding(image, watermark, alpha):
     sift = cv.SIFT.create()
     kp = sift.detect(ychannel, mask)
 
+    # Create Wavelet object (Daubechies Wavelet)
+    wavelet = pywt.Wavelet('haar')
+
+    coeffs = pywt.dwt2(ychannel, wavelet)
+    cA, (cH, cV, cD) = coeffs
+    cv.imwrite('Img/DwtTestcA.jpg', cA)
+    cv.imwrite('Img/DwtTestcD.jpg', cD)
+    cv.imwrite('Img/DwtTestcH.jpg', cH)
+    cv.imwrite('Img/DwtTestcV.jpg', cV)
+    print('Mean of cA: ', np.mean(cA))
+    print('Min of cA: ', np.min(cA))
+    print('Mean of cD: ', np.mean(cD))
+    print('Min of cD: ', np.min(cD))
+    print('Max of cD: ', np.max(cD))
+
+
     # sort keypoints by response value in descending order
     kp_sorted = sorted(kp, key=lambda x: x.response, reverse=True)
 
@@ -123,6 +138,43 @@ def embedding(image, watermark, alpha):
         x = int(round(keypoints_final[i].pt[0]))
         y = int(round(keypoints_final[i].pt[1]))
 
+        # testing
+        print('x = ', x)
+        print('y = ', y)
+        print('Mittelwert ychannel: ', np.mean(ychannel[y - region_size: y + region_size, x - region_size: x + region_size]))
+
+        coeffs2 = pywt.dwt2(ychannel[y - region_size: y + region_size, x - region_size: x + region_size], wavelet)
+        cAA, (cHH, cVV, cDD) = coeffs2
+        print('Summe LL: ', np.sum(np.abs(cAA)))
+        # print('Mean of LL: ', np.mean(cAA))
+        print('Summe HH: ', np.sum(np.abs(cDD)))
+        # print('Mean of HH: ', np.mean(cDD))
+
+        mean_ychannel = np.mean(ychannel[y - region_size: y + region_size, x - region_size: x + region_size])
+        sum_LL = np.sum(np.abs(cAA))
+        sum_HH = np.sum(np.abs(cDD))
+        alpha = 0.01
+        if sum_HH < 1200:
+            alpha = 0.008
+        if 1200 < sum_HH < 2400:
+            alpha = 0.01
+            if sum_LL > 300000 or mean_ychannel > 130:
+                alpha = 0.008
+            if mean_ychannel < 80:
+                alpha = 0.015
+        if 2400 < sum_HH < 5000:
+            alpha = 0.015
+            if sum_LL > 110:
+                alpha = 0.01
+            if mean_ychannel < 80:
+                alpha = 0.02
+        if 5000 < sum_HH < 10000:
+            alpha = 0.02
+        if sum_HH > 10000:
+            alpha = 0.03
+
+        # print('Mittelwert FFT: ', np.sum(np.power(np.fft.rfft2(ychannel[y - region_size: y + region_size, x - region_size: x + region_size]), 2)))
+
         for j in range(len(bin_watermark)):
             # optimization with two additional for loops maybe or slicing the array more efficient
             # 4x4 matrix is NOT in the left column of the square around the keypoint
@@ -134,10 +186,20 @@ def embedding(image, watermark, alpha):
                 row = y - region_size + (sub_size * j // k)
                 col = x - region_size
 
+            # DWT testing
+            '''coeffs = pywt.dwt2(ychannel[row: row + sub_size, col: col + sub_size], wavelet)
+            cA, (cH, cV, cD) = coeffs
+            print('Shape of cA: ', np.shape(cA))
+            print('Shape of cH: ', np.shape(cH))
+            print('Shape of cV: ', np.shape(cV))
+            print('Shape of cD: ', np.shape(cD))'''
+
+
             # perform singular value decomposition (SVD) on 4x4 matrices in the feature region
             # U, S, Vh = cv.SVDecomp(ychannel_float[row: row + sub_size, col: col + sub_size], flags=cv.SVD_FULL_UV)
             U, S, Vh = np.linalg.svd(ychannel[row: row + sub_size, col: col + sub_size], full_matrices=False)
-
+            # U, S, Vh = np.linalg.svd(cA, full_matrices=False)
+            # print('Shape of U: ', np.shape(Vh))
             # TODO: maybe use DWT-SVD or DCT-SVD instead of SVD
             # embeds the watermark bits in the singular value matrix
             if bin_watermark[j] == '0':
@@ -154,13 +216,16 @@ def embedding(image, watermark, alpha):
             Uw, Sw, Vwh = np.linalg.svd(t_emb, full_matrices=False)
 
             # SVD matrices needed for extraction of the watermark
-            svd_matrices[i][j][0] = Uw
-            svd_matrices[i][j][1] = np.diag(S)
-            svd_matrices[i][j][2] = Vwh
+            # svd_matrices[i][j][0] = Uw
+            # svd_matrices[i][j][1] = np.diag(S)
+            # svd_matrices[i][j][2] = Vwh
 
             # this matrix will replace its corresponding part in the ychannel
             watermarked_square = U @ np.diag(S) @ Vh
             np.clip(watermarked_square, 0, 255, watermarked_square)
+
+            # DWT testing
+            # ychannel[row: row + sub_size, col: col + sub_size] = pywt.idwt2((watermarked_square, (cH, cV, cD)), wavelet)
 
             # embeds the watermark in the ychannel
             ychannel[row: row + sub_size, col: col + sub_size] = watermarked_square
@@ -250,6 +315,7 @@ def extraction(image, svd_matrices, distorted=False, coords=None):
     :param coords:
     :return:
     """
+    # Optimization: use Wiener filtering method to denoise the image
     img = cv.imread(image)
 
     # Length of the watermark.
@@ -333,7 +399,6 @@ def extraction(image, svd_matrices, distorted=False, coords=None):
 
     keypoints_final = []
     dist_coords = []
-    isSet = False
 
     for i in range(kp_numb):
         orig_x = svd_matrices[i][len_wm][0][0][0]
@@ -343,15 +408,13 @@ def extraction(image, svd_matrices, distorted=False, coords=None):
             dist_x = kp_sorted[j].pt[0]
             dist_y = kp_sorted[j].pt[1]
 
-            if abs(orig_x - dist_x) <= 2.0 and abs(orig_y - dist_y) <= 2.0:
+            if abs(orig_x - dist_x) <= 0.1 and abs(orig_y - dist_y) <= 0.1:
                 keypoints_final.append(kp_sorted[j])
-                print('wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww')
-                isSet = True
+
                 dc = [dist_x, dist_y]
                 dist_coords.append(dc)
                 break
-        if not isSet:
-            isSet = False
+        else:
             dist_coords.append([orig_x, orig_y])
 
     possible_watermarks = []
@@ -359,7 +422,8 @@ def extraction(image, svd_matrices, distorted=False, coords=None):
     region_size = region_diameter // 2
     sub_size = 4
     possible_wm = ''
-
+    print('len distcoords')
+    print(len(dist_coords))
     for i in range(len(dist_coords)):
         x = round(dist_coords[i][0])
         y = round(dist_coords[i][1])
@@ -406,21 +470,32 @@ def extraction(image, svd_matrices, distorted=False, coords=None):
     # Calculate hamming distance between all possible watermarks. The one with the highest similarity is selected.
     minimum = len_wm
     w1 = possible_watermarks[0]
+    possible_watermarks_final = []
     print(w1)
     print(possible_watermarks[1])
     print(possible_watermarks[2])
     for i in range(len(possible_watermarks) - 1):
         for j in range(i + 1, len(possible_watermarks) - 1):
             curr = sum(c1 != c2 for c1, c2 in zip(possible_watermarks[i], possible_watermarks[j]))
-            if curr < minimum:
+            if curr < 19:
+                w1 = possible_watermarks[i]
+                w2 = possible_watermarks[j]
+                possible_watermarks_final.append(w1)
+                possible_watermarks_final.append(w2)
+            '''if curr < minimum:
                 minimum = curr
                 w1 = possible_watermarks[i]
                 w2 = possible_watermarks[j]
-    print(w1)
-    bin_blocks = [w1[i:i + 7] for i in range(0, len_wm, 7)]
-    watermark_rec = ''.join(chr(int(b, 2)) for b in bin_blocks)
-    print('Ist DAS das Wasserzeichen?!?!? omg')
-    print(watermark_rec)
+                print(minimum)
+                if minimum < 50:
+                    possible_watermarks_final.append(w1)
+                    possible_watermarks_final.append(w2)'''
+    print(len(possible_watermarks_final))
+    for j in possible_watermarks_final:
+        bin_blocks = [j[i:i + 7] for i in range(0, len_wm, 7)]
+        watermark_rec = ''.join(chr(int(b, 2)) for b in bin_blocks)
+        # print('Ist DAS das Wasserzeichen?!?!? omg')
+        print(watermark_rec)
 
     return
 
@@ -440,7 +515,7 @@ if __name__ == '__main__':
                       [4307, 466],
                       [4411, 2656],
                       [652, 3288]])
-    # svd1 = embedding('Img/stones.jpg', 'UniMuensterformr/formr.de.muenster', 0.03)[1]
+    # svd1 = embedding('Img/stones.jpg', 'UniMuensterformr/formr.de.muenster', 0.02)[1]
     # extraction('Img/IMG_20240215_042629199.jpg', svd1, True, coord)
 
     # Not screenshot resistant for alpha 0.01
@@ -451,16 +526,21 @@ if __name__ == '__main__':
     # svd2 = embedding('Img/stones.jpg', 'UniMuensterformr/formr.de.muenster', 0.01)[1]
     # extraction('Img/IMG_20240215_042802858.jpg', svd2, True, c)
 
+    # Testbild1 sent via messenger app, watermark recovery successfully
+    # svd = embedding('Img/Testbild1.png', 'IstDasWasserzeichenJPEGResistent?', 0.01)[1]
+    # extraction('Img/jpegtest.jpg', svd)
+
     james_coords = np.array([[0, 0],
                              [1000, 90],
                              [1000, 600],
                              [0, 500]])
 
     # projection_transformation('Img/IMG_20240213_182832385.jpg', coord, original_vertices)
-
-    # embedding('Img/james.jpg', 'uni-muenster.de/formr')
+    svd = embedding('Img/Testbild5.png', 'uni-muenster.de/formr', 0.03)[1]
+    extraction('Img/watermarked.jpg', svd)
+    # embedding('Img/Testbild1.png', 'uni-muenster.de/formr', 0.02)
     # extraction('Img/IMG_20240213_053254680.jpg', embedding('Img/james.jpg', 'uni-muenster.de/formr')[1], True, coord)
     # extraction('Img/IMG_20240213_053254680.jpg', embedding('Img/james.jpg', 'uni-muenster.de/formrspodigfpds')[1])
-    # james_svd = embedding('Img/james.jpg', 'Uni-Muenster/formr/Lennart')[1]
-    # extraction('Img/james.jpg', james_svd)
+    # james_svd = embedding('Img/Testbild3.png', 'UniMuenster/formr/Lennart', 0.01)[1]
+    # extraction('Img/watermarked.jpg', james_svd)
     # extraction('Img/bank.jpg', james_svd, True, james_coords)
