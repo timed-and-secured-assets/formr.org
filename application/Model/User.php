@@ -94,6 +94,7 @@ class User extends Model {
         return array();
     }
 
+    /**
     public function loadIdOfModeratorByMail($mail) { // ToDo: Need to test
             if($this->isAdmin()) {
                 $select = $this->db->select('id');
@@ -103,6 +104,7 @@ class User extends Model {
             }
             return array();
         }
+    */
 
     //is called by an admin for a user and sets the param user_id as the moderator_for to the user
     public function setModeratorFor($user_id) {
@@ -116,6 +118,7 @@ class User extends Model {
 
         return $this->db->update('survey_users', array('moderator_for' => $user_id), array('id' => $this->id));
     }
+
     //is called by an admin for a user and sets the param user_id as the moderator_for to the user which is specified by his email
     public function setModeratorForForUserEmail($user_id, $mail) {
             if (!Site::getCurrentUser()->isAdmin()) {
@@ -125,9 +128,9 @@ class User extends Model {
             $user_id = (int) $user_id;
             $user_id = max(array(0, $user_id));
 
-            $idCalledUser = loadIdOfModeratorByMail($mail);
-            $calledUser = new User($idCalledUser,null);
-            $calledUser->moderator_for = $user_id;
+            //$idCalledUser = loadIdOfModeratorByMail($mail);
+            //$calledUser = new User($idCalledUser,null);
+            //$calledUser->moderator_for = $user_id;
             return $this->db->update('survey_users', array('moderator_for' => $user_id), array('email' => $mail));
         }
 
