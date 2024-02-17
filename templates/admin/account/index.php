@@ -153,11 +153,19 @@
                         </div>
                         <?php if(Site::getCurrentUser()->isAdmin()): ?>
                             <div class="tab-pane" id="moderators">
+                                <?php
+                                    $modFor = Site::getCurrentUser()->getModeratedAdmin();
+                                    if($modFor!=null){
+                                        echo("<label class='control-label'> You are a moderator for " . $modFor[0]["email"] . ".</label>");
+                                    }else{
+                                        echo("<label class='control-label'> You are not moderating anyone.</label>");
+                                    }
+                                ?>
                                 <h4 class="lead"> <i class="fa fa-user"></i> Moderators</h4>
                                 <form method="post" action="">
                                     <div class="form-group  col-md-6">
-                                        <label class="control-label"> Add moderator (by username)</label>
-                                        <input class="form-control" name="add_moderator_name" placeholder="user name">
+                                        <label class="control-label"> Add moderator (by email)</label>
+                                        <input class="form-control" name="add_moderator_name" placeholder="email address">
                                         <input type="submit" class="btn btn-primary" value="Add Moderator">
                                     </div>
                                 </form>

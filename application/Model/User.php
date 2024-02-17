@@ -95,6 +95,20 @@ class User extends Model {
         return array();
     }
 
+
+    //returns null if this user is not a moderator
+    //otherwise, returns the email of the admin this user is moderating
+    public function getModeratedAdmin(){
+        if($this->moderator_for==0){
+            return null;
+        }
+        
+        $select = $this->db->select('email');
+        $select->from('survey_users');
+        $select->where(array('id' => $this->moderator_for));
+        return $select->fetchAll();
+    }
+
     /**
     public function loadIdOfModeratorByMail($mail) { // ToDo: Need to test
             if($this->isAdmin()) {
