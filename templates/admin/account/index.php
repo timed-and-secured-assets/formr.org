@@ -148,7 +148,6 @@
                                     </span>
                                 </div>
                                 <div class="clearfix"></div>
-                                </div>
                             </form>
                         </div>
                         <?php if(Site::getCurrentUser()->isAdmin()): ?>
