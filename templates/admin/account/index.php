@@ -151,34 +151,36 @@
                                 </div>
                             </form>
                         </div>
-                        <!-- /.tab-pane -->
-                        <div class="tab-pane" id="moderators">
-                            <h4 class="lead"> <i class="fa fa-user"></i> Moderators</h4>
-                            <form method="post" action="">
-                                <div class="form-group  col-md-6">
-                                    <label class="control-label"> Add moderator (by username)</label>
-                                    <input class="form-control" name="add_moderator_name" placeholder="user name">
-                                    <input type="submit" class="btn btn-primary" value="Add Moderator">
-                                </div>
-                            </form>
-                            <ul>
-                                <li>
-                                    <i class="fa fa-user"></i> John Doe 
-                                    <form method="POST" action="">
-                                        <input type="hidden" name="user_delete_id" value="1">
-                                        <button type="submit">Delete</button>
-                                    </form>
-                                </li>
-                                <li>
-                                    <i class="fa fa-user"></i> John Smith 
-                                    <form method="POST" action="">
-                                        <input type="hidden" name="user_delete_id" value="2">
-                                        <button type="submit">Delete</button>
-                                    </form>
-                                </li>
-                            </ul>
+                        <?php if(Site::getCurrentUser()->isAdmin()): ?>
+                            <div class="tab-pane" id="moderators">
+                                <h4 class="lead"> <i class="fa fa-user"></i> Moderators</h4>
+                                <form method="post" action="">
+                                    <div class="form-group  col-md-6">
+                                        <label class="control-label"> Add moderator (by username)</label>
+                                        <input class="form-control" name="add_moderator_name" placeholder="user name">
+                                        <input type="submit" class="btn btn-primary" value="Add Moderator">
+                                    </div>
+                                </form>
+                                <?php 
+                                    foreach(Site::getCurrentUser()->loadModerators() as $mod){
+                                        $email = $mod["email"];
+                                        echo("
+                                        <ul>
+                                            <li>
+                                                <i class='fa fa-user'></i> $email
+                                                <form method='POST' action=''>
+                                                    <input type='hidden' name='user_delete_email' value='$email'>
+                                                    <button type='submit'>Delete</button>
+                                                </form>
+                                            </li>
+                                        </ul>
+                                        ");
+                                    }
+                                ?>
                             <div class="clearfix"></div>
                         </div>
+                        <?php endif; ?>
+                        <!-- /.tab-pane -->
                     </div>
                     <!-- /.tab-content -->
                 </div>

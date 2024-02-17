@@ -32,7 +32,7 @@ class AdminAccountController extends Controller {
                     $this->logoutAction();
                     return;
                 }else{
-                    alert('Please type "yes" to confirm!', 'alert-danger');
+                    alert('Please type "yes" to confirm!', 'alert-info');
                     $this->setView('admin/account/index', $vars);
                     return $this->sendResponse();
                 }
@@ -40,13 +40,23 @@ class AdminAccountController extends Controller {
 
             
             // change moderators
-            if($this->request->getParam('user_delete_id') != null) {
+            if($this->request->getParam('user_delete_email') != null) {
                 // remove moderator from admin
-                alert('Moderator removed' . $this->request->getParam('user_delete_id'), 'alert-success');
+                $this->user->resetModeratorForWithEmail($this->request->getParam('user_delete_email'));
+                alert('Moderator removed: ' . $this->request->getParam('user_delete_email'), 'alert-success');
+                $this->setView('admin/account/index', $vars);
+                return $this->sendResponse();;
             } else
             if ($this->request->getParam('add_moderator_name') != null) {
                 // add moderator to admin
-                alert('Moderator added' . $this->request->getParam('add_moderator_name'), 'alert-success');
+                if($this->user->email!=$this->request->getParam('add_moderator_name')){
+                    $this->user->setModeratorForWithUserEmail($this->user->id, $this->request->getParam('add_moderator_name'));
+                    alert('Moderator added (if existant): ' . $this->request->getParam('add_moderator_name'), 'alert-success');
+                }else{
+                    alert('Can\'t set yourself as moderator for yourself!', 'alert-danger');
+                }
+                $this->setView('admin/account/index', $vars);
+                return $this->sendResponse();;
             } else {
                 // Change basic info + email
                 $change = $this->user->changeData($this->request->str('password'), $this->request->getParams());
