@@ -6,6 +6,8 @@ import pywt
 # based on:
 # https://link.springer.com/article/10.1007/s11042-022-12738-x
 # https://www.mdpi.com/2227-7390/11/7/1730#B45-mathematics-11-01730
+# https://www.sciencedirect.com/science/article/pii/S0030402614000345
+# https://www.sciencedirect.com/science/article/pii/S0096300308002865
 # https://ieeexplore.ieee.org/abstract/document/8513859
 # projective transformation: https://www.youtube.com/watch?v=2BIzmFD_pRQ
 
@@ -105,41 +107,48 @@ def embedding(image, watermark, region_diameter=64, alpha=None):
     # Number of 4x4 matrices per row/column in a feature region
     k = region_radius // 2
     
+    # Check whether alpha should be calculated automatically or not
+    automated = True
+    if alpha is not None:
+        automated = False
+
     for i in range(len(keypoints_final)):
         x = int(round(keypoints_final[i].pt[0]))
         y = int(round(keypoints_final[i].pt[1]))
 
         # Apply Discrete Wavelet Transformation (DWT) to the feature region
-        coeffs = pywt.dwt2(ychannel[y - region_radius: y + region_radius, x - region_radius: x + region_radius], wavelet)
-        cAA, (cHH, cVV, cDD) = coeffs
+        coeffs = pywt.dwt2(ychannel[y - region_radius: y + region_radius, x - region_radius: x + region_radius],
+                           wavelet)
+        cA, (cH, cV, cD) = coeffs
         # Sum up the low-frequency sub-band LL
-        sum_LL = np.sum(np.abs(cAA))
+        sum_LL = np.sum(np.abs(cA))
         # Sum up the high-frequency sub-band HH (maybe include HL, LH ?)
-        sum_HH = np.sum(np.abs(cDD))
+        sum_HH = np.sum(np.abs(cD))
         # Calculate medium brightness value of the feature region
         mean_ychannel = np.mean(ychannel[y - region_radius: y + region_radius, x - region_radius: x + region_radius])
 
         # Calculate a good embedding strength factor alpha (there is a need of improvement)
-        if sum_HH < 1200:
-            alpha = 0.008
-        if 1200 < sum_HH < 2400:
-            alpha = 0.01
+        if automated:
+            if sum_HH < 1200:
+                alpha = 0.008
+            if 1200 < sum_HH < 2400:
+                alpha = 0.01
             if sum_LL > 300000 or mean_ychannel > 130:
                 alpha = 0.008
             if mean_ychannel < 70:
                 alpha = 0.015
-        if 2400 < sum_HH < 5000:
-            alpha = 0.015
-            if sum_LL > 300000 or mean_ychannel > 120:
-                alpha = 0.01
-            if mean_ychannel < 80:
+            if 2400 < sum_HH < 5000:
+                alpha = 0.015
+                if sum_LL > 300000 or mean_ychannel > 120:
+                    alpha = 0.01
+                if mean_ychannel < 80:
+                    alpha = 0.02
+            if 5000 < sum_HH < 10000:
                 alpha = 0.02
-        if 5000 < sum_HH < 10000:
-            alpha = 0.02
-            if sum_LL > 400000 or mean_ychannel > 160:
-                alpha = 0.01
-        if sum_HH > 10000:
-            alpha = 0.03
+                if sum_LL > 400000 or mean_ychannel > 160:
+                    alpha = 0.01
+            if sum_HH > 10000:
+                alpha = 0.03
 
         # Index of binary watermark string
         j = 0
@@ -191,7 +200,7 @@ def embedding(image, watermark, region_diameter=64, alpha=None):
     information.append((height, width))
     # Number of modified regions and length of binary watermark are stored too
     information.append((len(keypoints_final), len(bin_watermark)))
-    
+
     # Merge the watermarked channel with the others and reconstruct the image
     watermark_ycrcb = cv.merge((ychannel, crchannel, cbchannel))
     watermark_img = cv.cvtColor(watermark_ycrcb, cv.COLOR_YCrCb2BGR)
@@ -339,7 +348,6 @@ def extraction(image, information, region_diameter=64, distorted=False, coords=N
                     restart = True
                     break
 
-    keypoints_final = []
     possible_watermarks = []
     sub_size = 4
     region_radius = region_diameter // 2
@@ -423,8 +431,7 @@ def extraction(image, information, region_diameter=64, distorted=False, coords=N
     for j in possible_watermarks_final:
         bin_blocks = [j[i:i + 7] for i in range(0, len_wm, 7)]
         watermark_rec = ''.join(chr(int(b, 2)) for b in bin_blocks)
-        print(watermark_rec)
+        # print(watermark_rec)
         watermarks.append(watermark_rec)
 
     return watermarks
-
