@@ -50,10 +50,13 @@ class AdminAccountController extends Controller {
             if ($this->request->getParam('add_moderator_name') != null) {
                 // add moderator to admin
                 if($this->user->email!=$this->request->getParam('add_moderator_name')){
-                    $this->user->setModeratorForWithUserEmail($this->user->id, $this->request->getParam('add_moderator_name'));
-                    alert('Moderator added (if existant): ' . $this->request->getParam('add_moderator_name'), 'alert-success');
+                    if($this->user->setModeratorForWithUserEmail($this->user->id, $this->request->getParam('add_moderator_name'))>0){
+                        alert('Moderator added: ' . $this->request->getParam('add_moderator_name'), 'alert-success');
+                    }else{
+                        alert('Could not add moderator! (Do they exist?): '. $this->request->getParam('add_moderator_name'), 'alert-danger');
+                    }
                 }else{
-                    alert('Can\'t set yourself as moderator for yourself!', 'alert-danger');
+                    alert('Cannot set yourself as moderator for yourself!', 'alert-danger');
                 }
                 $this->setView('admin/account/index', $vars);
                 return $this->sendResponse();;
