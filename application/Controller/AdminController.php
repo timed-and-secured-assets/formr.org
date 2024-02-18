@@ -98,7 +98,9 @@ class AdminController extends Controller {
         
         $this->user = new User($cookie[0], $cookie[1]);
 
-        if (!$this->user->isAdmin()) {
+        $run_or_survey = str_contains($_SERVER['REQUEST_URI'], 'run') || str_contains($_SERVER['REQUEST_URI'], 'survey');
+
+        if (!$this->user->isAdmin() && ($this->user->moderator_for==0 || !$run_or_survey)) {
             $docLink = site_url('documentation/#get_started');
             alert('You need to request for an admin account in order to access this section. <a href="'.$docLink.'">See Documentation</a>.', 'alert-warning');
             $this->request->redirect('admin/account');
