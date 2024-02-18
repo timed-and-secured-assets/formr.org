@@ -7,7 +7,7 @@
     </div>
     <div class="box-body no-padding">
         <ul class="nav nav-pills nav-stacked">
-            <li><a href="<?php echo admin_run_url($run->name); ?>"><i class="fa fa-edit"></i> Edit Run</a></li>
+            <?php if(Site::getCurrentUser()->created($run)): ?><li><a href="<?php echo admin_run_url($run->name); ?>"><i class="fa fa-edit"></i> Edit Run</a></li><?php endif; ?>
             <li><a href="<?php echo admin_run_url($run->name, 'settings'); ?>"><i class="fa fa-cogs"></i> Settings</a></li>
             <li><a href="<?php echo admin_run_url($run->name, 'upload_files'); ?>" title="Upload images, videos, sounds and the like."><i class="fa fa-upload"></i> Upload Files</a></li>
         </ul>
@@ -69,24 +69,26 @@
 </div>
 <!-- /.box -->
 
-<div class="box box-solid collapsed-box">
-    <div class="box-header with-border">
-        <h3 class="box-title"><i class="fa fa-bolt"></i> Danger Zone</h3>
-        <div class="box-tools">
-            <button type="button" class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-plus"></i></button>
+<?php if(Site::getCurrentUser()->created($run)): ?>
+    <div class="box box-solid collapsed-box">
+        <div class="box-header with-border">
+            <h3 class="box-title"><i class="fa fa-bolt"></i> Danger Zone</h3>
+            <div class="box-tools">
+                <button type="button" class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-plus"></i></button>
+            </div>
         </div>
-    </div>
-    <div class="box-body no-padding">
-        <ul class="nav nav-pills nav-stacked">
-            <li><a href="<?= admin_run_url($run->name, 'delete_run'); ?>"><i class="fa fa-trash text-red"></i> Delete Run</a></li>
-            <li><a href="<?= admin_run_url($run->name, 'empty_run'); ?>"><i class="fa fa-trash text-red"></i> Empty Run</a></li>
-            <li><a href="<?= admin_run_url($run->name, 'rename_run'); ?>"><i class="fa fa-edit text-red"></i> Rename Run</a></li>
+        <div class="box-body no-padding">
+            <ul class="nav nav-pills nav-stacked">
+                <li><a href="<?= admin_run_url($run->name, 'delete_run'); ?>"><i class="fa fa-trash text-red"></i> Delete Run</a></li>
+                <li><a href="<?= admin_run_url($run->name, 'empty_run'); ?>"><i class="fa fa-trash text-red"></i> Empty Run</a></li>
+                <li><a href="<?= admin_run_url($run->name, 'rename_run'); ?>"><i class="fa fa-edit text-red"></i> Rename Run</a></li>
 
-            <li><a href="<?php echo run_url($run->name, null, array('code' => $user->user_code)) ?>" target="_blank" title="Don't use this function for testing! Click this link to play the run as yourself. Remember that the run saves your position and progress, so you will go where you left off."><i class="fa fa-play text-red"></i> Use run as yourself</a></li>
+                <li><a href="<?php echo run_url($run->name, null, array('code' => $user->user_code)) ?>" target="_blank" title="Don't use this function for testing! Click this link to play the run as yourself. Remember that the run saves your position and progress, so you will go where you left off."><i class="fa fa-play text-red"></i> Use run as yourself</a></li>
 
-        </ul>
+            </ul>
+        </div>
+        <!-- /.box-body -->
     </div>
-    <!-- /.box-body -->
-</div>
+<?php endif; ?>
 <!-- /.box -->
 <a href="<?php echo admin_url('run/add_run'); ?>" class="btn btn-primary btn-block margin-bottom"><i class="fa fa-plus-circle"></i> Add Run</a>
