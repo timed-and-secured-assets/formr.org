@@ -94,6 +94,20 @@ class SurveyStudy extends Model {
         return new SurveyStudy(null, $options);
     }
 
+    /**
+     * 
+     * @param int $id
+     * @param string $name
+     * @return \SurveyStudy
+     */
+    public static function loadByUserIDAndName(int $id, $name) {
+        $options = [
+            'name' => $name,
+            'user_id' => $id,
+        ];
+        return new SurveyStudy(null, $options);
+    }
+
     protected function load($id, $options) {
         if (!$options || !is_array($options)) {
             $options = [];
