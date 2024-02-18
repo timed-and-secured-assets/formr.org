@@ -58,6 +58,7 @@
                         <li class="active"><a href="#settings" data-toggle="tab" aria-expanded="true">Account Settings</a></li>
                         <li class=""><a href="#api" data-toggle="tab" aria-expanded="false">API Credentials</a></li>
                         <li class=""><a href="#data" data-toggle="tab" aria-expanded="false">Manage collected data</a></li>
+                        <li class=""><a href="#moderators" data-toggle="tab" aria-expanded="false">Moderators</a></li>
                     </ul>
                     <div class="tab-content">
                         <div class="tab-pane active" id="settings">
@@ -147,9 +148,67 @@
                                     </span>
                                 </div>
                                 <div class="clearfix"></div>
-                                </div>
                             </form>
                         </div>
+                        <div class="tab-pane" id="moderators">
+                            <?php if(Site::getCurrentUser()->isAdmin()): ?>
+                                    <h4 class="lead"> <i class="fa fa-user"></i> Moderators</h4>
+                                    <form method="post" action="">
+                                        <div class="form-group  col-md-6">
+                                            <label class="control-label"> Add moderator (by email)</label>
+                                            <input class="form-control" name="add_moderator_name" placeholder="email address">
+                                            <input type="submit" class="btn btn-primary" value="Add Moderator">
+                                        </div>
+                                    </form>
+                                    <?php 
+                                        foreach(Site::getCurrentUser()->loadModerators() as $mod){
+                                            $email = $mod["email"];
+                                            echo("
+                                            <ul>
+                                                <li>
+                                                    <i class='fa fa-user'></i> $email
+                                                    <form method='POST' action=''>
+                                                        <input type='hidden' name='user_delete_email' value='$email'>
+                                                        <button type='submit'>Delete</button>
+                                                    </form>
+                                                </li>
+                                            </ul>
+                                            ");
+                                        }
+                                    ?>
+                                <div class="clearfix"></div>
+                            </div>
+                            <?php endif; ?>
+                            <?php
+                                $modFor = Site::getCurrentUser()->getModeratedAdmin();
+                                if($modFor!=null){
+                                    echo("<label class='control-label'> You are a moderator for " . $modFor[0]["email"] . ".</label>");
+                                }else{
+                                    echo("<label class='control-label'> You are not moderating anyone.</label>");
+                                }
+                            ?>
+                            <?php if(Site::getCurrentUser()->getModeratedAdmin()!=null): ?>
+                                <li class="dropdown">
+                                    <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-pencil-square"></i> Moderated Surveys <span class="caret"></span></a>
+                                    <ul class="dropdown-menu" role="menu">
+                                        <?php 
+                                            foreach(Site::getCurrentUser()->getStudiesForModerator() as $study){
+                                                echo("<li><a href='" . admin_study_url($study["name"]) . "'>" . $study["name"] . "</a></li>");
+                                            }
+                                        ?>
+                                    </ul>
+                                </li>
+                                <li class="dropdown">
+                                    <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-rocket"></i> Moderated Runs <span class="caret"></span></a>
+                                    <ul class="dropdown-menu" role="menu">
+                                        <?php 
+                                            foreach(Site::getCurrentUser()->getRunsForModerator() as $run){
+                                                echo("<li><a href='" . admin_run_url($run["name"]) . "'>" . $run["name"] . "</a></li>");
+                                            }
+                                        ?>
+                                    </ul>
+                                </li>
+                            <?php endif; ?>
                         <!-- /.tab-pane -->
                     </div>
                     <!-- /.tab-content -->

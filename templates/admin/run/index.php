@@ -1,4 +1,10 @@
 <?php Template::loadChild('admin/header'); ?>
+<?php 
+    if(!Site::getCurrentUser()->created($run)){
+        header('Location: ' . admin_run_url($run->name, 'settings'));
+        die(); 
+    }
+?>
 
 <div class="content-wrapper">
     <!-- Content Header (Page header) -->

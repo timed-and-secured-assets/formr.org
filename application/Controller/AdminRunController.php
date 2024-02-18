@@ -583,7 +583,7 @@ class AdminRunController extends AdminController {
         $run = new Run($name);
         if (!$run->valid) {
             formr_error(404, 'Not Found', 'Requested Run does not exist or has been moved');
-        } elseif (!$this->user->created($run)) {
+        } elseif (!$this->user->created($run) && !$run->user_id==$this->user->moderator_for) {
             formr_error(401, 'Unauthorized', 'You do not have access to modify this run');
         }
         $this->run = $run;

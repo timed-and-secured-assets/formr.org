@@ -1,4 +1,10 @@
 <?php Template::loadChild('admin/header'); ?>
+<?php 
+    if(!Site::getCurrentUser()->isAdmin()){
+        header('Location: ' . admin_url('account'));
+        die(); 
+    }
+?>
 
 <!-- Content Wrapper. Contains page content -->
 <div class="content-wrapper">

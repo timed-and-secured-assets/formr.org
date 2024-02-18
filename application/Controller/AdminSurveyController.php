@@ -551,7 +551,14 @@ class AdminSurveyController extends AdminController {
 
         $study = SurveyStudy::loadByUserAndName($this->user, $name);
         if (!$study->valid) {
-            formr_error(404, 'Not Found', 'Requested Survey does not exist or has been moved');
+            if($this->user->moderator_for==0){
+                formr_error(404, 'Not Found', 'Requested Survey does not exist or has been moved');
+            }
+
+            $study = SurveyStudy::loadByUserIdAndName($this->user->moderator_for, $name);
+            if(!$study->valid){
+                formr_error(404, 'Not Found', 'Requested Survey does not exist or has been moved');
+            }
         }
 
         $google_id = $study->getGoogleFileId();
