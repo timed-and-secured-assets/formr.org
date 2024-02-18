@@ -91,4 +91,4 @@
     </div>
 <?php endif; ?>
 <!-- /.box -->
-<a href="<?php echo admin_url('run/add_run'); ?>" class="btn btn-primary btn-block margin-bottom"><i class="fa fa-plus-circle"></i> Add Run</a>
+<?php if(Site::getCurrentUser()->isAdmin()): ?><a href="<?php echo admin_url('run/add_run'); ?>" class="btn btn-primary btn-block margin-bottom"><i class="fa fa-plus-circle"></i> Add Run</a><?php endif;?>
