@@ -49,6 +49,7 @@
 </div>
 
 <!-- /. box -->
+<?php if(Site::getCurrentUser()->created($study)): ?>
 <div class="box box-solid collapsed-box">
     <div class="box-header with-border">
         <h3 class="box-title"><i class="fa fa-bolt"></i> Danger Zone</h3>
@@ -65,6 +66,7 @@
     </div>
     <!-- /.box-body -->
 </div>
+<?php endif; ?>
 <!-- /.box -->
 <?php
 if (empty($resultCount)) {
@@ -81,4 +83,4 @@ if (trim((string)$study->google_file_id) && (int) $resultCount['real_users'] ===
     </form>
 <?php endif; ?>
 <hr />
-<a href="<?= admin_url('survey') ?>" class="btn btn-primary btn-block margin-bottom"><i class="fa fa-plus-circle"></i> Add Survey</a>
+<?php if(Site::getCurrentUser()->isAdmin()): ?><a href="<?= admin_url('survey') ?>" class="btn btn-primary btn-block margin-bottom"><i class="fa fa-plus-circle"></i> Add Survey</a><?php endif; ?>

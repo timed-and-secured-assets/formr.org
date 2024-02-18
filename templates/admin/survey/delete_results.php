@@ -1,4 +1,10 @@
 <?php Template::loadChild('admin/header'); ?>
+<?php 
+    if(!Site::getCurrentUser()->created($study)){
+        header('Location: ' . admin_study_url($study->name));
+        die(); 
+    }
+?>
 
 <div class="content-wrapper">
 
