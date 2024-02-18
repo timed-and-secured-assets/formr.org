@@ -150,42 +150,40 @@
                                 <div class="clearfix"></div>
                             </form>
                         </div>
-                        <?php if(Site::getCurrentUser()->isAdmin() || Site::getCurrentUser()->moderator_for!=0): ?>
-                            <div class="tab-pane" id="moderators">
-                                <?php
-                                    $modFor = Site::getCurrentUser()->getModeratedAdmin();
-                                    if($modFor!=null){
-                                        echo("<label class='control-label'> You are a moderator for " . $modFor[0]["email"] . ".</label>");
-                                    }else{
-                                        echo("<label class='control-label'> You are not moderating anyone.</label>");
+                        <div class="tab-pane" id="moderators">
+                            <?php
+                                $modFor = Site::getCurrentUser()->getModeratedAdmin();
+                                if($modFor!=null){
+                                    echo("<label class='control-label'> You are a moderator for " . $modFor[0]["email"] . ".</label>");
+                                }else{
+                                    echo("<label class='control-label'> You are not moderating anyone.</label>");
+                                }
+                            ?>
+                            <?php if(Site::getCurrentUser()->isAdmin()): ?>
+                                <h4 class="lead"> <i class="fa fa-user"></i> Moderators</h4>
+                                <form method="post" action="">
+                                    <div class="form-group  col-md-6">
+                                        <label class="control-label"> Add moderator (by email)</label>
+                                        <input class="form-control" name="add_moderator_name" placeholder="email address">
+                                        <input type="submit" class="btn btn-primary" value="Add Moderator">
+                                    </div>
+                                </form>
+                                <?php 
+                                    foreach(Site::getCurrentUser()->loadModerators() as $mod){
+                                        $email = $mod["email"];
+                                        echo("
+                                        <ul>
+                                            <li>
+                                                <i class='fa fa-user'></i> $email
+                                                <form method='POST' action=''>
+                                                    <input type='hidden' name='user_delete_email' value='$email'>
+                                                    <button type='submit'>Delete</button>
+                                                </form>
+                                            </li>
+                                        </ul>
+                                        ");
                                     }
                                 ?>
-                                <?php if(Site::getCurrentUser()->isAdmin()): ?>
-                                    <h4 class="lead"> <i class="fa fa-user"></i> Moderators</h4>
-                                    <form method="post" action="">
-                                        <div class="form-group  col-md-6">
-                                            <label class="control-label"> Add moderator (by email)</label>
-                                            <input class="form-control" name="add_moderator_name" placeholder="email address">
-                                            <input type="submit" class="btn btn-primary" value="Add Moderator">
-                                        </div>
-                                    </form>
-                                    <?php 
-                                        foreach(Site::getCurrentUser()->loadModerators() as $mod){
-                                            $email = $mod["email"];
-                                            echo("
-                                            <ul>
-                                                <li>
-                                                    <i class='fa fa-user'></i> $email
-                                                    <form method='POST' action=''>
-                                                        <input type='hidden' name='user_delete_email' value='$email'>
-                                                        <button type='submit'>Delete</button>
-                                                    </form>
-                                                </li>
-                                            </ul>
-                                            ");
-                                        }
-                                    ?>
-                                <?php endif;?>
                             <div class="clearfix"></div>
                         </div>
                         <?php endif; ?>
