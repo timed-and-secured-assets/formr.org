@@ -8,19 +8,16 @@ import numpy as np
 import blind_watermark_core
 
 
-def embed_watermark(image_path, watermark_text, output_path=None):
+def embed_watermark(image_path, watermark_text):
     """
-    Embed a watermark text into an image and store it.
+    Embed a watermark text into an image.
 
     The embedding process uses a QR-Code to embed the text as an image and make it more robust.
     The QR-Code image is then embedded using a robust and blind watermark algorithm using DWT, DCT and SVD.
 
-    If output_path is None the standard output path is used.
-
     :param image_path: The path to the image to add the watermark to.
     :param watermark_text: The watermark text to embed.
-    :param output_path: The path where to store the watermarked image (optional).
-    :return: The used output path, the watermark key needed to extract the watermark.
+    :return: The watermarked image, the watermark key needed to extract the watermark.
     """
     # Create image path and check if the file exists
     image_path = pathlib.Path(image_path)
@@ -57,19 +54,7 @@ def embed_watermark(image_path, watermark_text, output_path=None):
     # Embed the watermark into the image
     embedded_image = blind_watermark_core.embed_watermark(image, watermark)
 
-    # Define a standard output path if none is given and create the path directory
-    if output_path is None:
-        output_path = image_path.parent / "watermark" / image_path.name
-    else:
-        output_path = pathlib.Path(output_path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-
-    # Write the image to the output path and check if the image was written successfully
-    successful = cv2.imwrite(str(output_path), img=embedded_image)
-    if not successful:
-        raise IOError(f"Could not write image to {output_path}")
-
-    return str(output_path), watermark.shape[0]
+    return embedded_image, watermark.shape[0]
 
 
 def extract_watermark(image_path, watermark_key, output_path=None):
